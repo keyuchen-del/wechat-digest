@@ -9,7 +9,7 @@
   <body>
     <header>
       <h1>公众号推送整理与总结助手</h1>
-      <p>输入文章链接或公众号名称，自动抓取并整理，再用自然语言总结。</p>
+      <p>输入文章链接自动抓取，或按公众号名称获取文章列表与链接，再做自然语言总结。</p>
     </header>
 
     <main>
@@ -23,13 +23,18 @@
           <button id="fetch-article-btn" type="button">抓取该文章</button>
 
           <label class="span-2">
-            公众号名称（实验功能）
+            公众号名称
             <input id="account-name-input" placeholder="例如：腾讯研究院" />
           </label>
-          <button id="fetch-account-btn" type="button">抓取最近文章</button>
+          <button id="fetch-account-btn" type="button">获取文章列表</button>
         </div>
-        <p class="tip">说明：链接抓取成功率高；公众号名称抓取依赖第三方检索页面，成功率受网络与站点策略影响。</p>
+        <p class="tip">说明：公众号名称模式会返回文章列表和链接，你可点开阅读，或点击“入库”导入到文章库。</p>
         <div id="fetch-status" class="summary-output"></div>
+
+        <div class="account-results-wrap">
+          <h3>公众号文章列表</h3>
+          <ul id="account-results" class="account-results"></ul>
+        </div>
       </section>
 
       <section class="card">

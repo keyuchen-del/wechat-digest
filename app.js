@@ -3,6 +3,7 @@ const READER_PREFIX = "https://r.jina.ai/http://";
 const FETCH_TIMEOUT_MS = 10000;
 
 const articleList = document.getElementById("article-list");
+const accountResults = document.getElementById("account-results");
 const template = document.getElementById("article-item-template");
 const summaryOutput = document.getElementById("summary-output");
 const fetchStatus = document.getElementById("fetch-status");
@@ -28,6 +29,7 @@ fetchArticleBtn.addEventListener("click", async () => {
 
   toggleFetchButtons(true);
   setFetchStatus("正在抓取文章（提速模式）...");
+
   try {
     const article = await fetchAndParseArticle(url);
     saveArticle(article);
@@ -45,29 +47,16 @@ fetchAccountBtn.addEventListener("click", async () => {
   if (!account) return setFetchStatus("请先输入公众号名称。", true);
 
   toggleFetchButtons(true);
-  setFetchStatus("正在检索并并发抓取最近文章...");
+  setFetchStatus("正在获取公众号文章列表...");
+
   try {
-    const foundUrls = await fetchArticleLinksByAccount(account);
-    if (!foundUrls.length) throw new Error("未检索到文章链接，请改用文章地址抓取。");
-
-    const targets = foundUrls.slice(0, 5);
-    const results = await Promise.allSettled(targets.map((url) => fetchAndParseArticle(url, account)));
-    const successArticles = results
-      .filter((r) => r.status === "fulfilled")
-      .map((r) => r.value)
-      .filter((item) => !articles.some((a) => a.url === item.url));
-
-    if (!successArticles.length) {
-      throw new Error("检索到链接但抓取失败率高，建议改用单篇链接抓取。");
-    }
-
-    articles = [...successArticles, ...articles];
-    persistArticles();
-    renderArticles();
-    accountNameInput.value = "";
-    setFetchStatus(`已自动整理 ${successArticles.length}/${targets.length} 篇文章。`);
+    const entries = await fetchArticleEntriesByAccount(account);
+    if (!entries.length) throw new Error("未检索到文章，请更换关键词重试。");
+    renderAccountResults(entries, account);
+    setFetchStatus(`已获取 ${entries.length} 篇候选文章，可点击链接或入库。`);
   } catch (error) {
-    setFetchStatus(`公众号抓取失败：${error.message}`, true);
+    setFetchStatus(`列表获取失败：${error.message}`, true);
+    renderAccountResults([], account);
   } finally {
     toggleFetchButtons(false);
   }
@@ -103,6 +92,12 @@ function setFetchStatus(message, isError = false) {
   fetchStatus.style.color = isError ? "#b91c1c" : "#0f172a";
 }
 
+function toReaderUrl(url) {
+  const normalized = normalizeUrl(url);
+  const withoutProtocol = normalized.replace(/^https?:\/\//i, "");
+  return `${READER_PREFIX}${withoutProtocol}`;
+}
+
 async function fetchWithTimeout(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -112,6 +107,7 @@ async function fetchWithTimeout(url) {
     return await resp.text();
   } catch (error) {
     if (error.name === "AbortError") throw new Error("请求超时，请稍后重试");
+    if (error instanceof TypeError) throw new Error("网络被浏览器拦截（Failed to fetch），请优先用 Vercel 线上地址访问");
     throw error;
   } finally {
     clearTimeout(timer);
@@ -120,7 +116,7 @@ async function fetchWithTimeout(url) {
 
 async function fetchAndParseArticle(url, accountHint = "") {
   const normalizedUrl = normalizeUrl(url);
-  const readerUrl = `${READER_PREFIX}${normalizedUrl}`;
+  const readerUrl = toReaderUrl(normalizedUrl);
 
   let text = "";
   try {
@@ -144,12 +140,70 @@ async function fetchAndParseArticle(url, accountHint = "") {
   };
 }
 
-async function fetchArticleLinksByAccount(accountName) {
+async function fetchArticleEntriesByAccount(accountName) {
   const query = encodeURIComponent(accountName);
-  const searchUrl = `${READER_PREFIX}https://weixin.sogou.com/weixin?type=2&query=${query}`;
+  const searchUrl = toReaderUrl(`https://weixin.sogou.com/weixin?type=2&query=${query}`);
   const text = await fetchWithTimeout(searchUrl);
-  const links = [...text.matchAll(/https?:\/\/mp\.weixin\.qq\.com\/s\?[^\s)]+/g)].map((m) => m[0]);
-  return Array.from(new Set(links));
+
+  const markdownMatches = [...text.matchAll(/\[(.*?)\]\((https?:\/\/mp\.weixin\.qq\.com\/s\?[^)]+)\)/g)].map((m) => ({
+    title: m[1].trim() || "未命名文章",
+    url: m[2].trim()
+  }));
+
+  const plainLinks = [...text.matchAll(/https?:\/\/mp\.weixin\.qq\.com\/s\?[^\s)]+/g)].map((m) => ({
+    title: "公众号文章",
+    url: m[0]
+  }));
+
+  const merged = [...markdownMatches, ...plainLinks];
+  const seen = new Set();
+  return merged.filter((item) => {
+    if (seen.has(item.url)) return false;
+    seen.add(item.url);
+    return true;
+  }).slice(0, 12);
+}
+
+function renderAccountResults(entries, accountName = "") {
+  accountResults.innerHTML = "";
+  if (!entries.length) {
+    accountResults.innerHTML = `<li><span class="result-title">${accountName ? `“${accountName}”暂无结果` : "暂无结果"}</span></li>`;
+    return;
+  }
+
+  entries.forEach((entry) => {
+    const li = document.createElement("li");
+    const title = document.createElement("div");
+    title.className = "result-title";
+    title.innerHTML = `<strong>${escapeHtml(entry.title)}</strong><br><a href="${entry.url}" target="_blank" rel="noopener noreferrer">${entry.url}</a>`;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "small-btn";
+    btn.textContent = "入库";
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "抓取中...";
+      try {
+        const article = await fetchAndParseArticle(entry.url, accountName);
+        saveArticle(article);
+        setFetchStatus(`已入库：${article.title}`);
+        btn.textContent = "已入库";
+      } catch (error) {
+        btn.disabled = false;
+        btn.textContent = "重试入库";
+        setFetchStatus(`入库失败：${error.message}`, true);
+      }
+    });
+
+    li.appendChild(title);
+    li.appendChild(btn);
+    accountResults.appendChild(li);
+  });
+}
+
+function escapeHtml(text) {
+  return text.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 }
 
 function normalizeUrl(url) {
