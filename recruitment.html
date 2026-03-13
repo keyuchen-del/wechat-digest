@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>暑期招聘每日更新</title>
+    <link rel="stylesheet" href="recruitment.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>暑期招聘每日更新看板</h1>
+      <p>聚合互联网/快消/金融等行业暑期招聘信息，支持按城市、岗位类型、关键词快速筛选。</p>
+      <div class="hero-meta">
+        <span id="last-updated">最后更新：加载中...</span>
+        <span id="today-count">今日新增：0</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>筛选条件</h2>
+        <div class="toolbar">
+          <input id="keyword" placeholder="关键词：公司 / 岗位 / 技能" />
+          <select id="city-filter">
+            <option value="">全部城市</option>
+          </select>
+          <select id="type-filter">
+            <option value="">全部类型</option>
+          </select>
+          <input id="date-filter" type="date" />
+          <button id="clear-filters" type="button">清空筛选</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>职位列表</h2>
+        <ul id="job-list" class="job-list"></ul>
+      </section>
+
+      <section class="card">
+        <h2>每日更新说明（GitHub 工作流）</h2>
+        <ol>
+          <li>将每日收集到的岗位新增/修改到 <code>data/jobs.json</code>；</li>
+          <li>提交到 GitHub 仓库 <code>main</code> 分支；</li>
+          <li>GitHub Pages 自动发布，页面立即可见。</li>
+        </ol>
+        <p><a class="back-link" href="./index.html">返回原有主页工具</a></p>
+      </section>
+    </main>
+
+    <template id="job-item-template">
+      <li class="job-item">
+        <div class="top-row">
+          <h3 class="title"></h3>
+          <span class="badge"></span>
+        </div>
+        <p class="meta"></p>
+        <p class="desc"></p>
+        <div class="tags"></div>
+        <div class="actions">
+          <a class="url" target="_blank" rel="noopener noreferrer">查看投递链接</a>
+          <span class="deadline"></span>
+        </div>
+      </li>
+    </template>
+
+    <script src="recruitment.js"></script>
+  </body>
+</html>

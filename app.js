@@ -1,146 +1,194 @@
-const jobList = document.getElementById("job-list");
-const template = document.getElementById("job-item-template");
+const STORAGE_KEY = "wechat_digest_articles";
+
+const articleForm = document.getElementById("article-form");
+const articleList = document.getElementById("article-list");
+const template = document.getElementById("article-item-template");
+const summaryOutput = document.getElementById("summary-output");
 
 const keywordInput = document.getElementById("keyword");
-const cityFilter = document.getElementById("city-filter");
-const typeFilter = document.getElementById("type-filter");
-const dateFilter = document.getElementById("date-filter");
+const filterDateInput = document.getElementById("filter-date");
+const filterAccountInput = document.getElementById("filter-account");
 const clearFiltersBtn = document.getElementById("clear-filters");
+const summarizeBtn = document.getElementById("summarize-btn");
+const promptInput = document.getElementById("prompt");
 
-const lastUpdatedEl = document.getElementById("last-updated");
-const todayCountEl = document.getElementById("today-count");
+let articles = loadArticles();
+renderArticles();
 
-let jobs = [];
+articleForm.addEventListener("submit", (event) => {
+  event.preventDefault();
 
-init();
+  const article = {
+    id: crypto.randomUUID(),
+    account: document.getElementById("account").value.trim(),
+    publishDate: document.getElementById("publish-date").value,
+    title: document.getElementById("title").value.trim(),
+    url: document.getElementById("url").value.trim(),
+    content: document.getElementById("content").value.trim(),
+    createdAt: new Date().toISOString()
+  };
 
-async function init() {
-  const data = await loadJobs();
-  jobs = sortByPublishDate(data.jobs || []);
-
-  setupSummary(data.updatedAt, jobs);
-  setupFilterOptions(jobs);
-  bindEvents();
-  renderJobs();
-}
-
-async function loadJobs() {
-  try {
-    const response = await fetch("./data/jobs.json", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`加载失败：${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    jobList.innerHTML = `<li class="empty">数据加载失败：${error.message}</li>`;
-    return { updatedAt: "未知", jobs: [] };
-  }
-}
-
-function sortByPublishDate(items) {
-  return [...items].sort((a, b) => (a.publishDate < b.publishDate ? 1 : -1));
-}
-
-function setupSummary(updatedAt, allJobs) {
-  lastUpdatedEl.textContent = `最后更新：${updatedAt || "未知"}`;
-
-  const today = getToday();
-  const todayCount = allJobs.filter((job) => job.publishDate === today).length;
-  todayCountEl.textContent = `今日新增：${todayCount}`;
-}
-
-function setupFilterOptions(allJobs) {
-  const citySet = new Set();
-  const typeSet = new Set();
-
-  allJobs.forEach((job) => {
-    if (job.city) citySet.add(job.city);
-    if (job.type) typeSet.add(job.type);
-  });
-
-  [...citySet].sort().forEach((city) => cityFilter.append(new Option(city, city)));
-  [...typeSet].sort().forEach((type) => typeFilter.append(new Option(type, type)));
-}
-
-function bindEvents() {
-  [keywordInput, cityFilter, typeFilter, dateFilter].forEach((node) => {
-    node.addEventListener("input", renderJobs);
-    node.addEventListener("change", renderJobs);
-  });
-
-  clearFiltersBtn.addEventListener("click", () => {
-    keywordInput.value = "";
-    cityFilter.value = "";
-    typeFilter.value = "";
-    dateFilter.value = "";
-    renderJobs();
-  });
-}
-
-function getFilteredJobs() {
-  const keyword = keywordInput.value.trim().toLowerCase();
-  const city = cityFilter.value;
-  const type = typeFilter.value;
-  const publishDate = dateFilter.value;
-
-  return jobs.filter((job) => {
-    const text = [job.company, job.title, job.description, ...(job.tags || [])]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    const matchKeyword = !keyword || text.includes(keyword);
-    const matchCity = !city || job.city === city;
-    const matchType = !type || job.type === type;
-    const matchDate = !publishDate || job.publishDate === publishDate;
-
-    return matchKeyword && matchCity && matchType && matchDate;
-  });
-}
-
-function renderJobs() {
-  const filtered = getFilteredJobs();
-  jobList.innerHTML = "";
-
-  if (!filtered.length) {
-    jobList.innerHTML = '<li class="empty">暂无符合条件的岗位，试试放宽筛选条件。</li>';
+  if (!article.account || !article.publishDate || !article.title || !article.content) {
     return;
   }
 
-  filtered.forEach((job) => {
-    const node = template.content.firstElementChild.cloneNode(true);
-    node.querySelector(".title").textContent = `${job.company}｜${job.title}`;
-    node.querySelector(".badge").textContent = job.type || "岗位";
-    node.querySelector(".meta").textContent = `${job.city || "城市待定"} · 发布时间：${job.publishDate || "未知"}`;
-    node.querySelector(".desc").textContent = job.description || "暂无岗位描述";
-    node.querySelector(".deadline").textContent = `截止时间：${job.deadline || "未注明"}`;
+  articles.unshift(article);
+  persistArticles();
+  articleForm.reset();
+  renderArticles();
+  summaryOutput.textContent = "文章已保存，请在文章库选择目标文章后生成总结。";
+});
 
-    const tagsContainer = node.querySelector(".tags");
-    (job.tags || []).forEach((tag) => {
-      const span = document.createElement("span");
-      span.className = "tag";
-      span.textContent = tag;
-      tagsContainer.appendChild(span);
-    });
+[keywordInput, filterDateInput, filterAccountInput].forEach((el) => {
+  el.addEventListener("input", renderArticles);
+});
 
-    const urlNode = node.querySelector(".url");
-    if (job.url) {
-      urlNode.href = job.url;
-    } else {
-      urlNode.textContent = "暂无投递链接";
-      urlNode.removeAttribute("href");
-      urlNode.style.pointerEvents = "none";
-      urlNode.style.color = "#64748b";
-    }
+clearFiltersBtn.addEventListener("click", () => {
+  keywordInput.value = "";
+  filterDateInput.value = "";
+  filterAccountInput.value = "";
+  renderArticles();
+});
 
-    jobList.appendChild(node);
+summarizeBtn.addEventListener("click", () => {
+  const selectedId = getSelectedArticleId();
+  if (!selectedId) {
+    summaryOutput.textContent = "请先在文章库中选择一篇文章。";
+    return;
+  }
+
+  const article = articles.find((item) => item.id === selectedId);
+  if (!article) {
+    summaryOutput.textContent = "未找到所选文章。";
+    return;
+  }
+
+  const prompt = promptInput.value.trim() || "请总结这篇文章的核心观点。";
+  summaryOutput.textContent = summarizeText(article, prompt);
+});
+
+function loadArticles() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistArticles() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(articles));
+}
+
+function getFilteredArticles() {
+  const keyword = keywordInput.value.trim().toLowerCase();
+  const date = filterDateInput.value;
+  const account = filterAccountInput.value.trim().toLowerCase();
+
+  return articles.filter((article) => {
+    const matchKeyword =
+      !keyword ||
+      article.title.toLowerCase().includes(keyword) ||
+      article.content.toLowerCase().includes(keyword);
+    const matchDate = !date || article.publishDate === date;
+    const matchAccount = !account || article.account.toLowerCase().includes(account);
+    return matchKeyword && matchDate && matchAccount;
   });
 }
 
-function getToday() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+function renderArticles() {
+  articleList.innerHTML = "";
+  const filtered = getFilteredArticles();
+
+  if (!filtered.length) {
+    articleList.innerHTML = "<li>暂无符合条件的文章。</li>";
+    return;
+  }
+
+  filtered.forEach((article, index) => {
+    const node = template.content.firstElementChild.cloneNode(true);
+    const radio = node.querySelector("input[type='radio']");
+    radio.value = article.id;
+    radio.checked = index === 0;
+
+    node.querySelector(".meta").textContent = `${article.account} · ${article.publishDate}`;
+    node.querySelector(".title").textContent = article.title;
+    node.querySelector(".preview").textContent = `${article.content.slice(0, 90)}...`;
+
+    const url = node.querySelector(".url");
+    if (article.url) {
+      url.href = article.url;
+    } else {
+      url.textContent = "无原文链接";
+      url.removeAttribute("href");
+      url.style.pointerEvents = "none";
+    }
+
+    node.querySelector(".delete-btn").addEventListener("click", () => {
+      articles = articles.filter((item) => item.id !== article.id);
+      persistArticles();
+      renderArticles();
+      summaryOutput.textContent = "已删除文章。";
+    });
+
+    articleList.appendChild(node);
+  });
+}
+
+function getSelectedArticleId() {
+  const selected = document.querySelector("input[name='selected-article']:checked");
+  return selected ? selected.value : null;
+}
+
+function summarizeText(article, prompt) {
+  const normalized = article.content
+    .replace(/\s+/g, " ")
+    .replace(/。/g, "。\n")
+    .split(/\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (!normalized.length) {
+    return "文章内容为空，无法生成总结。";
+  }
+
+  const topSentences = pickTopSentences(normalized, 3);
+  return [
+    `指令：${prompt}`,
+    `文章：《${article.title}》`,
+    "",
+    "总结：",
+    ...topSentences.map((sentence, i) => `${i + 1}. ${sentence}`),
+    "",
+    "（说明：当前为本地摘要算法结果，可继续对接大模型 API 以获得更强语义理解能力。）"
+  ].join("\n");
+}
+
+function pickTopSentences(sentences, count) {
+  const frequency = new Map();
+  sentences.forEach((sentence) => {
+    sentence
+      .replace(/[，。！？、“”‘’；：,.!?;:()（）]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 1)
+      .forEach((word) => {
+        frequency.set(word, (frequency.get(word) || 0) + 1);
+      });
+  });
+
+  const scored = sentences.map((sentence, idx) => {
+    const score = sentence
+      .replace(/[，。！？、“”‘’；：,.!?;:()（）]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 1)
+      .reduce((sum, word) => sum + (frequency.get(word) || 0), 0);
+
+    return { sentence, idx, score };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .sort((a, b) => a.idx - b.idx)
+    .map((item) => item.sentence);
 }
