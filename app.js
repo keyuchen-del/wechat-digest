@@ -2,11 +2,13 @@ const STORAGE_KEY = "wechat_digest_articles";
 const API_KEY_STORAGE = "wechat_digest_api_key";
 const API_MODEL_STORAGE = "wechat_digest_api_model";
 
-const articleForm = document.getElementById("article-form");
+/* ── DOM Refs ── */
+
 const articleList = document.getElementById("article-list");
 const template = document.getElementById("article-item-template");
 const summaryOutput = document.getElementById("summary-output");
-const articleCountBadge = document.getElementById("article-count");
+const articleCountEl = document.getElementById("article-count");
+const articleSelect = document.getElementById("article-select");
 
 const keywordInput = document.getElementById("keyword");
 const filterDateInput = document.getElementById("filter-date");
@@ -15,8 +17,6 @@ const clearFiltersBtn = document.getElementById("clear-filters");
 const summarizeBtn = document.getElementById("summarize-btn");
 const promptInput = document.getElementById("prompt");
 
-const apiToggleBtn = document.getElementById("api-toggle-btn");
-const apiBody = document.getElementById("api-body");
 const apiKeyInput = document.getElementById("api-key");
 const apiModelSelect = document.getElementById("api-model");
 const saveApiBtn = document.getElementById("save-api");
@@ -26,6 +26,12 @@ const apiStatus = document.getElementById("api-status");
 const loadDemoBtn = document.getElementById("load-demo");
 const importBtn = document.getElementById("import-btn");
 const importFile = document.getElementById("import-file");
+
+const articleForm = document.getElementById("article-form");
+const addArticleBtn = document.getElementById("add-article-btn");
+const addModal = document.getElementById("add-modal");
+const closeModalBtn = document.getElementById("close-modal");
+const cancelModalBtn = document.getElementById("cancel-modal");
 
 /* ── Demo Data ── */
 
@@ -77,11 +83,77 @@ const DEMO_ARTICLES = [
   }
 ];
 
+/* ── Pre-generated Demo Summary ── */
+
+const DEMO_SUMMARY = `**核心观点总结：**
+
+**1. 经济转型加速**
+中国经济正经历新旧动能转换，传统引擎（房地产、基建）减速，新兴动力（新能源、AI、高端制造）接棒。一季度 GDP 增速预计约 5%。
+
+**2. 出口结构优化**
+"新三样"（新能源汽车、锂电池、光伏组件）出口占比持续提升，中国制造的全球竞争力正在从低成本向高附加值转移。
+
+**3. 政策组合拳**
+货币政策稳健偏宽松，LPR 仍有下调空间；财政端更积极，专项债规模有望扩大，为经济托底。
+
+**4. 三大投资方向**
+- AI 算力产业链（半导体 + 云计算）
+- 全球竞争力新能源车企
+- 消费复苏受益的品牌消费品
+
+**风险提示：** 海外高利率环境下的全球资本流动压力，以及地缘政治不确定性。
+
+> 本摘要由 AI 自动生成，配置 OpenAI API Key 后可获得更精准的分析结果。`;
+
 /* ── Init ── */
 
 let articles = loadArticles();
+
+if (!articles.length) {
+  articles = [...DEMO_ARTICLES];
+  persistArticles();
+}
+
 initApiSettings();
+initTabs();
 renderArticles();
+updateArticleSelect();
+showDemoSummary();
+
+/* ── Tab Switching ── */
+
+function initTabs() {
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+
+      if (tab.dataset.tab === "summary") {
+        updateArticleSelect();
+      }
+    });
+  });
+}
+
+/* ── Modal ── */
+
+addArticleBtn.addEventListener("click", () => {
+  addModal.style.display = "flex";
+});
+
+closeModalBtn.addEventListener("click", () => {
+  addModal.style.display = "none";
+});
+
+cancelModalBtn.addEventListener("click", () => {
+  addModal.style.display = "none";
+});
+
+addModal.addEventListener("click", (e) => {
+  if (e.target === addModal) addModal.style.display = "none";
+});
 
 /* ── Event Listeners ── */
 
@@ -100,8 +172,9 @@ articleForm.addEventListener("submit", (e) => {
   articles.unshift(article);
   persistArticles();
   articleForm.reset();
+  addModal.style.display = "none";
   renderArticles();
-  summaryOutput.textContent = "文章已保存。";
+  updateArticleSelect();
 });
 
 [keywordInput, filterDateInput, filterAccountInput].forEach((el) =>
@@ -117,12 +190,6 @@ clearFiltersBtn.addEventListener("click", () => {
 
 summarizeBtn.addEventListener("click", handleSummarize);
 
-apiToggleBtn.addEventListener("click", () => {
-  const open = apiBody.style.display !== "none";
-  apiBody.style.display = open ? "none" : "block";
-  apiToggleBtn.textContent = open ? "展开" : "收起";
-});
-
 saveApiBtn.addEventListener("click", () => {
   const key = apiKeyInput.value.trim();
   const model = apiModelSelect.value;
@@ -130,8 +197,6 @@ saveApiBtn.addEventListener("click", () => {
   localStorage.setItem(API_KEY_STORAGE, key);
   localStorage.setItem(API_MODEL_STORAGE, model);
   updateApiStatus();
-  apiBody.style.display = "none";
-  apiToggleBtn.textContent = "展开";
 });
 
 clearApiBtn.addEventListener("click", () => {
@@ -148,7 +213,7 @@ loadDemoBtn.addEventListener("click", () => {
   articles = [...newOnes, ...articles];
   persistArticles();
   renderArticles();
-  summaryOutput.textContent = `已加载 ${newOnes.length} 篇示例文章。`;
+  updateArticleSelect();
 });
 
 importBtn.addEventListener("click", () => importFile.click());
@@ -178,7 +243,8 @@ importFile.addEventListener("change", (e) => {
       });
       persistArticles();
       renderArticles();
-      summaryOutput.textContent = `成功导入 ${count} 篇文章。`;
+      updateArticleSelect();
+      alert(`成功导入 ${count} 篇文章`);
     } catch {
       alert("JSON 格式错误，请检查文件内容。");
     }
@@ -201,10 +267,10 @@ function updateApiStatus() {
   const key = localStorage.getItem(API_KEY_STORAGE);
   if (key) {
     const model = localStorage.getItem(API_MODEL_STORAGE) || "gpt-4o-mini";
-    apiStatus.textContent = `已配置 — ${model}`;
+    apiStatus.textContent = `已配置 · ${model}`;
     apiStatus.classList.add("connected");
   } else {
-    apiStatus.textContent = "未配置 — 使用本地摘要";
+    apiStatus.textContent = "未配置";
     apiStatus.classList.remove("connected");
   }
 }
@@ -245,24 +311,25 @@ function getFilteredArticles() {
 function renderArticles() {
   articleList.innerHTML = "";
   const filtered = getFilteredArticles();
-  articleCountBadge.textContent = articles.length;
+  articleCountEl.textContent = articles.length;
 
   if (!filtered.length) {
     articleList.innerHTML = articles.length
-      ? "<li class='empty'>没有符合筛选条件的文章。</li>"
-      : "<li class='empty'>暂无文章，请添加或点击「加载示例数据」体验。</li>";
+      ? "<li class='empty'>没有符合筛选条件的文章</li>"
+      : "<li class='empty'>暂无文章<br/>点击上方「+ 添加文章」或前往设置页加载示例数据</li>";
     return;
   }
 
   filtered.forEach((article, index) => {
     const node = template.content.firstElementChild.cloneNode(true);
-    const radio = node.querySelector("input[type='radio']");
-    radio.value = article.id;
-    radio.checked = index === 0;
+    node.style.animationDelay = `${index * 0.05}s`;
+
+    const checkbox = node.querySelector("input[type='checkbox']");
+    checkbox.value = article.id;
 
     node.querySelector(".meta").textContent = `${article.account} · ${article.publishDate}`;
     node.querySelector(".title").textContent = article.title;
-    node.querySelector(".preview").textContent = article.content.slice(0, 120) + (article.content.length > 120 ? "..." : "");
+    node.querySelector(".preview").textContent = article.content.slice(0, 100) + (article.content.length > 100 ? "..." : "");
 
     const fullContent = node.querySelector(".full-content");
     fullContent.textContent = article.content;
@@ -280,38 +347,55 @@ function renderArticles() {
     if (article.url) {
       urlEl.href = article.url;
     } else {
-      urlEl.textContent = "无原文链接";
-      urlEl.removeAttribute("href");
-      urlEl.style.pointerEvents = "none";
-      urlEl.style.color = "#94a3b8";
+      urlEl.style.display = "none";
     }
 
     node.querySelector(".delete-btn").addEventListener("click", () => {
       articles = articles.filter((a) => a.id !== article.id);
       persistArticles();
       renderArticles();
+      updateArticleSelect();
     });
 
     articleList.appendChild(node);
   });
 }
 
-function getSelectedArticleId() {
-  const el = document.querySelector("input[name='selected-article']:checked");
-  return el ? el.value : null;
+/* ── Article Select (for Summary tab) ── */
+
+function updateArticleSelect() {
+  const current = articleSelect.value;
+  articleSelect.innerHTML = '<option value="">-- 请选择一篇文章 --</option>';
+  articles.forEach((a) => {
+    const opt = document.createElement("option");
+    opt.value = a.id;
+    opt.textContent = `[${a.account}] ${a.title}`;
+    articleSelect.appendChild(opt);
+  });
+  if (current && articles.find((a) => a.id === current)) {
+    articleSelect.value = current;
+  } else if (articles.length) {
+    articleSelect.value = articles[0].id;
+  }
+}
+
+/* ── Demo Summary ── */
+
+function showDemoSummary() {
+  summaryOutput.innerHTML = formatMarkdown(DEMO_SUMMARY);
 }
 
 /* ── Summarize ── */
 
 async function handleSummarize() {
-  const selectedId = getSelectedArticleId();
+  const selectedId = articleSelect.value;
   if (!selectedId) {
-    summaryOutput.textContent = "请先在文章库中选择一篇文章。";
+    summaryOutput.innerHTML = '<div class="error">请先选择一篇文章</div>';
     return;
   }
   const article = articles.find((a) => a.id === selectedId);
   if (!article) {
-    summaryOutput.textContent = "未找到所选文章。";
+    summaryOutput.innerHTML = '<div class="error">未找到所选文章</div>';
     return;
   }
 
@@ -321,7 +405,7 @@ async function handleSummarize() {
   if (api) {
     await summarizeWithGPT(article, prompt, api);
   } else {
-    summaryOutput.innerHTML = summarizeLocal(article, prompt);
+    await summarizeWithTyping(article, prompt);
   }
 }
 
@@ -380,14 +464,18 @@ async function summarizeWithGPT(article, prompt, api) {
           const delta = parsed.choices?.[0]?.delta?.content;
           if (delta) {
             result += delta;
-            summaryOutput.innerHTML = formatMarkdown(result);
+            summaryOutput.innerHTML = formatMarkdown(result) + '<span class="typing-cursor"></span>';
             summaryOutput.scrollTop = summaryOutput.scrollHeight;
           }
         } catch {}
       }
     }
 
-    if (!result) summaryOutput.textContent = "未生成任何内容。";
+    if (result) {
+      summaryOutput.innerHTML = formatMarkdown(result);
+    } else {
+      summaryOutput.innerHTML = '<div class="error">未生成任何内容</div>';
+    }
   } catch (err) {
     summaryOutput.innerHTML = `<div class="error">API 调用失败：${err.message}</div>`;
   } finally {
@@ -395,9 +483,113 @@ async function summarizeWithGPT(article, prompt, api) {
   }
 }
 
-/* ── Local Summarization (enhanced) ── */
+/* ── Typing Animation (local demo) ── */
 
-function summarizeLocal(article, prompt) {
+async function summarizeWithTyping(article, prompt) {
+  summaryOutput.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+  summarizeBtn.disabled = true;
+
+  const demoTexts = {
+    "demo-1": DEMO_SUMMARY,
+    "demo-2": `**核心观点总结：**
+
+**1. 价格战驱动因素**
+大模型 API 价格下调 50%-90%，核心原因是推理成本一年内下降约 70%（模型蒸馏 + 量化压缩 + 芯片迭代），而非简单的补贴战。
+
+**2. 战略分化**
+- 头部玩家：低价抢占开发者生态，构建护城河
+- 中小厂商：被动跟进保份额，面临资金链压力
+
+**3. 真正的盈利模式**
+单纯 API 调用难以支撑估值，三大盈利点：企业级定制部署（利润率 30%+）、垂直行业解决方案（金融风控、医疗诊断）、基于模型的 SaaS 产品。
+
+**4. 行业洗牌信号**
+预计 2025 年底 30%-40% 的大模型创业公司将面临资金链断裂或被收购。
+
+> 本摘要由 AI Demo 模式生成`,
+    "demo-3": `**核心观点总结：**
+
+**三大行为经济学陷阱：**
+
+**1. 心理账户（Mental Accounting）**
+人们将收入按来源贴上不同标签：工资"省着花"，年终奖"随便花"。实质上钱是完全可替代的，这种分类导致非理性消费。
+
+**2. 锚定效应（Anchoring Effect）**
+商家设定的"原价"作为参照锚点，让消费者产生"赚到了"的错觉。原价 899 现价 299，你实际花了 299 而非省了 600。
+
+**3. 即时满足偏好（Present Bias）**
+大脑天然偏好即时快乐——一杯 30 元奶茶 vs 30 年后多 30 元退休金，感知完全不同。
+
+**解决方案：**
+- 发薪日自动转 20% 到难取出的账户
+- 24 小时下单冷静期
+- 存款目标具象化（"明年日本机票"而非"存钱"）
+
+> 本摘要由 AI Demo 模式生成`,
+    "demo-4": `**核心观点总结：**
+
+**三条 AI 视频生成技术路线：**
+
+| 路线 | 代表 | 优势 | 劣势 |
+|------|------|------|------|
+| DiT 扩散 | Sora | 质量高、物理一致 | 计算成本极高 |
+| I2V 插帧 | Runway Gen-3 | 速度快 | 运动不连贯 |
+| 端到端 | 可灵、智谱 | 一步到位 | 需要海量数据 |
+
+**商业落地：**
+- 短视频平台和广告行业最先买单
+- 15 秒产品广告：传统 3-5 万 → AI 仅几百元（仍需人工精修）
+- 2025 年底市场规模预计达 50 亿美元
+
+**关键判断：** 目前没有哪条路线取得压倒性优势，市场仍处于技术路线验证期。
+
+> 本摘要由 AI Demo 模式生成`,
+    "demo-5": `**核心观点总结：**
+
+**六大政策方向、28 条措施：**
+
+**1. 市场准入** — 清理不合理门槛，电信/医疗/教育放宽民间资本准入
+**2. 融资支持** — 金融机构加大民企贷款力度，设立专项信贷产品
+**3. 税费优惠** — 小微企业减免延续，研发加计扣除提至 120%
+**4. 法治保障** — 规范涉企执法，建立经济影响评估制度，防止以刑事干预经济纠纷
+**5. 创新支持** — 民企可参与 AI、量子信息、生物技术等国家重大科技项目
+**6. 人才支持** — 畅通职称评审渠道，纳入地方人才引进计划
+
+**核心信号：** 从市场准入到法治保障的全链条支持，释放对民营经济的强信心信号。
+
+> 本摘要由 AI Demo 模式生成`
+  };
+
+  await new Promise((r) => setTimeout(r, 800));
+
+  const text = demoTexts[article.id] || generateLocalSummary(article, prompt);
+  let displayed = "";
+  summaryOutput.innerHTML = "";
+  summarizeBtn.disabled = true;
+
+  const chars = [...text];
+  for (let i = 0; i < chars.length; i++) {
+    displayed += chars[i];
+    summaryOutput.innerHTML = formatMarkdown(displayed) + '<span class="typing-cursor"></span>';
+
+    if (chars[i] === "\n") {
+      await new Promise((r) => setTimeout(r, 30));
+    } else if ("。！？，；：".includes(chars[i])) {
+      await new Promise((r) => setTimeout(r, 20));
+    } else {
+      await new Promise((r) => setTimeout(r, 8));
+    }
+
+    summaryOutput.scrollTop = summaryOutput.scrollHeight;
+  }
+
+  summaryOutput.innerHTML = formatMarkdown(displayed);
+  summarizeBtn.disabled = false;
+}
+
+/* ── Local Fallback Summary ── */
+
+function generateLocalSummary(article, prompt) {
   const sentences = article.content
     .replace(/([。！？])/g, "$1\n")
     .split(/\n+/)
@@ -432,19 +624,10 @@ function summarizeLocal(article, prompt) {
     .sort((a, b) => a.idx - b.idx)
     .map((item) => item.sentence);
 
-  const lines = [
-    `<strong>指令：</strong>${prompt}`,
-    `<strong>文章：</strong>《${article.title}》（${article.account} · ${article.publishDate}）`,
-    "",
-    "<strong>摘要：</strong>",
-    ...top.map((s, i) => `${i + 1}. ${s}`),
-    "",
-    '<span class="local-note">📌 当前为本地摘要算法。配置 OpenAI API Key 后可获得 GPT 智能总结。</span>'
-  ];
-  return lines.join("<br>");
+  return `**文章：**《${article.title}》（${article.account} · ${article.publishDate}）\n**指令：**${prompt}\n\n**摘要：**\n${top.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n> 本摘要由本地算法生成，配置 OpenAI API Key 后可获得 GPT 智能总结`;
 }
 
-/* ── Markdown-like Formatting ── */
+/* ── Markdown Formatting ── */
 
 function formatMarkdown(text) {
   return text
@@ -452,5 +635,6 @@ function formatMarkdown(text) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid #0F766E;padding-left:10px;color:#64748B;margin:8px 0;font-size:12px">$1</blockquote>')
     .replace(/\n/g, "<br>");
 }

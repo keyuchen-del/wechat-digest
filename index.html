@@ -3,121 +3,231 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>公众号推送整理与总结助手</title>
+    <title>WeChat Digest — AI 公众号文章总结工具</title>
     <meta name="description" content="整理微信公众号推送文章，按公众号/日期筛选，使用 AI（OpenAI GPT）智能总结。" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header>
-      <h1>公众号推送整理与总结助手</h1>
-      <p>录入 / 导入公众号文章，按关键词和日期筛选，AI 一键总结。</p>
-    </header>
-
-    <main>
-      <!-- API 设置 -->
-      <section class="card api-card">
-        <div class="api-header" id="api-toggle">
-          <h2>API 设置</h2>
-          <span class="api-status" id="api-status">未配置 — 使用本地摘要</span>
-          <button type="button" class="btn-sm" id="api-toggle-btn">展开</button>
+    <div class="landing-layout">
+      <!-- Left: Product Info -->
+      <div class="landing-info">
+        <div class="landing-logo">
+          <div class="landing-logo-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+              <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>
+            </svg>
+          </div>
+          <span class="landing-logo-text">WeChat Digest</span>
         </div>
-        <div class="api-body" id="api-body" style="display:none">
-          <p class="tip">填入 OpenAI API Key 后可使用 GPT 进行真正的智能总结。Key 仅存储在浏览器本地，不会上传到任何服务器。</p>
-          <div class="api-form">
-            <label>
-              OpenAI API Key
-              <input id="api-key" type="password" placeholder="sk-..." />
-            </label>
-            <label>
-              模型
-              <select id="api-model">
-                <option value="gpt-4o-mini">gpt-4o-mini（推荐，快且便宜）</option>
-                <option value="gpt-4o">gpt-4o（更强）</option>
-                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-              </select>
-            </label>
-            <div class="api-actions">
-              <button type="button" id="save-api" class="btn-primary">保存设置</button>
-              <button type="button" id="clear-api" class="btn-sm">清除 Key</button>
+
+        <div class="landing-tagline">
+          AI-Powered WeChat Article Summarizer<br/>
+          公众号文章整理与 AI 智能总结工具
+        </div>
+
+        <div class="landing-features">
+          <div class="landing-feature">
+            <div class="landing-feature-icon" style="background:rgba(16,185,129,0.15)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <div>
+              <div class="landing-feature-title">智能文章管理</div>
+              <div class="landing-feature-desc">按公众号、日期整理推送文章，关键词快速筛选检索</div>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon" style="background:rgba(14,165,233,0.15)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6H14c0-3 2-4 2-6a4 4 0 0 0-4-4z"/><path d="M10 17v1a2 2 0 1 0 4 0v-1"/><line x1="10" y1="13" x2="14" y2="13"/></svg>
+            </div>
+            <div>
+              <div class="landing-feature-title">AI 智能总结</div>
+              <div class="landing-feature-desc">接入 OpenAI GPT，流式分析文章，支持自定义分析指令</div>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon" style="background:rgba(168,85,247,0.15)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div>
+              <div class="landing-feature-title">批量导入</div>
+              <div class="landing-feature-desc">JSON 格式一键导入文章库，内置示例数据即刻体验</div>
+            </div>
+          </div>
+          <div class="landing-feature">
+            <div class="landing-feature-icon" style="background:rgba(239,68,68,0.15)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+              <div class="landing-feature-title">隐私优先</div>
+              <div class="landing-feature-desc">所有数据存储在浏览器本地，API Key 不上传任何服务器</div>
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- 添加文章 -->
-      <section class="card">
-        <h2>1) 添加公众号与文章</h2>
-        <form id="article-form">
-          <div class="grid">
-            <label>
-              公众号名称
-              <input id="account" required placeholder="例如：XX财经观察" />
-            </label>
-            <label>
-              推送日期
-              <input id="publish-date" type="date" required />
-            </label>
-            <label class="span-2">
-              文章标题
-              <input id="title" required placeholder="输入文章标题" />
-            </label>
-            <label class="span-2">
-              原文链接（可选）
-              <input id="url" type="url" placeholder="https://..." />
-            </label>
-            <label class="span-2">
-              文章内容
-              <textarea id="content" rows="6" required placeholder="粘贴文章全文，便于后续总结"></textarea>
-            </label>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn-primary">保存文章</button>
-            <button type="button" id="load-demo" class="btn-sm">加载示例数据</button>
-            <button type="button" id="import-btn" class="btn-sm">批量导入 JSON</button>
-          </div>
-        </form>
-        <input type="file" id="import-file" accept=".json" style="display:none" />
-      </section>
-
-      <!-- 文章库 -->
-      <section class="card">
-        <h2>2) 文章库 <span class="badge" id="article-count">0</span></h2>
-        <div class="toolbar">
-          <input id="keyword" placeholder="按标题或内容关键词筛选" />
-          <input id="filter-date" type="date" />
-          <input id="filter-account" placeholder="按公众号筛选" />
-          <button id="clear-filters" type="button" class="btn-sm">清空筛选</button>
+        <div class="landing-badges">
+          <span class="landing-badge">Vanilla JS</span>
+          <span class="landing-badge">OpenAI API</span>
+          <span class="landing-badge">SSE Streaming</span>
+          <span class="landing-badge">localStorage</span>
+          <span class="landing-badge">GitHub Pages</span>
         </div>
-        <ul id="article-list" class="article-list"></ul>
-      </section>
+      </div>
 
-      <!-- 自然语言总结 -->
-      <section class="card">
-        <h2>3) AI 智能总结</h2>
-        <p class="tip">先在文章库中选择一篇文章，再输入你的需求。</p>
-        <label>
-          你的指令
-          <textarea id="prompt" rows="3" placeholder="例如：提炼核心观点并输出 120 字摘要"></textarea>
-        </label>
-        <button id="summarize-btn" type="button" class="btn-primary">生成总结</button>
-        <div id="summary-output" class="summary-output"></div>
-      </section>
-    </main>
+      <!-- Right: Browser Window Frame -->
+      <div class="demo-window">
+        <div class="window-titlebar">
+          <div class="window-dots">
+            <span class="dot-red"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green"></span>
+          </div>
+          <div class="window-url">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            keyuchen-del.github.io/wechat-digest
+          </div>
+        </div>
+
+        <div class="window-content">
+          <!-- Mini Header -->
+          <div class="app-header">
+            <h1>公众号推送整理与总结助手</h1>
+          </div>
+
+          <!-- Tab Bar -->
+          <div class="tab-bar">
+            <div class="tab active" data-tab="library">文章库</div>
+            <div class="tab" data-tab="summary">AI 总结</div>
+            <div class="tab" data-tab="settings">设置</div>
+          </div>
+
+          <!-- Tab: Library -->
+          <div class="tab-panel active" id="panel-library">
+            <div class="toolbar">
+              <input id="keyword" placeholder="关键词搜索" />
+              <input id="filter-date" type="date" />
+              <input id="filter-account" placeholder="公众号" />
+              <button id="clear-filters" type="button" class="btn-sm">清空</button>
+            </div>
+            <div class="list-header">
+              <span>共 <strong id="article-count">0</strong> 篇文章</span>
+              <button type="button" class="btn-sm" id="add-article-btn">+ 添加文章</button>
+            </div>
+            <ul id="article-list" class="article-list"></ul>
+
+            <!-- Add Article Modal (hidden) -->
+            <div class="modal-overlay" id="add-modal" style="display:none">
+              <div class="modal">
+                <div class="modal-header">
+                  <h3>添加文章</h3>
+                  <button type="button" class="modal-close" id="close-modal">&times;</button>
+                </div>
+                <form id="article-form">
+                  <div class="form-grid">
+                    <label>
+                      公众号名称
+                      <input id="account" required placeholder="例如：XX财经观察" />
+                    </label>
+                    <label>
+                      推送日期
+                      <input id="publish-date" type="date" required />
+                    </label>
+                    <label class="span-2">
+                      文章标题
+                      <input id="title" required placeholder="输入文章标题" />
+                    </label>
+                    <label class="span-2">
+                      原文链接（可选）
+                      <input id="url" type="url" placeholder="https://..." />
+                    </label>
+                    <label class="span-2">
+                      文章内容
+                      <textarea id="content" rows="5" required placeholder="粘贴文章全文，便于后续总结"></textarea>
+                    </label>
+                  </div>
+                  <div class="modal-actions">
+                    <button type="submit" class="btn-primary">保存文章</button>
+                    <button type="button" class="btn-sm" id="cancel-modal">取消</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: AI Summary -->
+          <div class="tab-panel" id="panel-summary">
+            <div class="summary-layout">
+              <div class="summary-select">
+                <label class="select-label">选择文章</label>
+                <select id="article-select" class="article-select">
+                  <option value="">-- 请选择一篇文章 --</option>
+                </select>
+              </div>
+              <label>
+                分析指令
+                <textarea id="prompt" rows="2" placeholder="例如：提炼核心观点并输出 120 字摘要"></textarea>
+              </label>
+              <button id="summarize-btn" type="button" class="btn-primary btn-full">生成总结</button>
+              <div id="summary-output" class="summary-output"></div>
+            </div>
+          </div>
+
+          <!-- Tab: Settings -->
+          <div class="tab-panel" id="panel-settings">
+            <div class="settings-section">
+              <h3>API 配置</h3>
+              <p class="tip">填入 OpenAI API Key 后可使用 GPT 进行真正的智能总结。Key 仅存储在浏览器本地。</p>
+              <div class="settings-form">
+                <label>
+                  OpenAI API Key
+                  <input id="api-key" type="password" placeholder="sk-..." />
+                </label>
+                <label>
+                  模型
+                  <select id="api-model">
+                    <option value="gpt-4o-mini">gpt-4o-mini（推荐）</option>
+                    <option value="gpt-4o">gpt-4o（更强）</option>
+                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                  </select>
+                </label>
+                <div class="settings-actions">
+                  <button type="button" id="save-api" class="btn-primary">保存设置</button>
+                  <button type="button" id="clear-api" class="btn-sm">清除 Key</button>
+                  <span class="api-status" id="api-status">未配置</span>
+                </div>
+              </div>
+            </div>
+            <hr class="divider"/>
+            <div class="settings-section">
+              <h3>数据管理</h3>
+              <div class="settings-actions">
+                <button type="button" id="load-demo" class="btn-sm">加载示例数据</button>
+                <button type="button" id="import-btn" class="btn-sm">批量导入 JSON</button>
+              </div>
+              <input type="file" id="import-file" accept=".json" style="display:none" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <template id="article-item-template">
       <li class="article-item">
-        <label>
-          <input type="radio" name="selected-article" />
-          <span class="meta"></span>
-        </label>
-        <h3 class="title"></h3>
+        <div class="article-item-header">
+          <label class="radio-label">
+            <input type="checkbox" name="selected-article" />
+            <span class="meta"></span>
+          </label>
+          <div class="article-actions">
+            <a class="url" target="_blank" rel="noopener noreferrer">原文</a>
+            <button type="button" class="delete-btn">删除</button>
+          </div>
+        </div>
+        <h4 class="title"></h4>
         <p class="preview"></p>
         <button type="button" class="expand-btn">展开全文</button>
         <div class="full-content" style="display:none"></div>
-        <div class="actions">
-          <a class="url" target="_blank" rel="noopener noreferrer">查看原文</a>
-          <button type="button" class="delete-btn">删除</button>
-        </div>
       </li>
     </template>
 
