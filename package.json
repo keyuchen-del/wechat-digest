@@ -1,0 +1,11 @@
+{
+  "name": "wechat-digest",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI 公众号文章抓取、自动总结与结构化分析工具",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  }
+}

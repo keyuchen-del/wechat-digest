@@ -1,144 +1,119 @@
-<p align="center">
-  <img src="https://em-content.zobj.net/source/apple/391/newspaper_1f4f0.png" width="64" height="64" alt="WeChat Digest" />
-</p>
+# 墨摘 WeChat Digest · AI 公众号抓取与结构化分析
 
-<h1 align="center">WeChat Digest</h1>
+> 输入公众号名称，自动抓取最新文章，AI 一键完成总结与结构化分析。
+> **匿名工作区码** 即开即用、跨设备同步、人人数据隔离；支持 **OpenAI / DeepSeek / 通义千问**。
 
-<p align="center">
-  <strong>AI-Powered WeChat Article Summarizer</strong><br/>
-  <sub>公众号文章整理与 AI 智能总结工具 — 录入、筛选、一键 GPT 摘要</sub>
-</p>
-
-<p align="center">
-  <a href="https://keyuchen-del.github.io/wechat-digest/">Live Demo</a> &nbsp;|&nbsp;
-  <a href="#features">Features</a> &nbsp;|&nbsp;
-  <a href="#architecture">Architecture</a> &nbsp;|&nbsp;
-  <a href="#getting-started">Getting Started</a> &nbsp;|&nbsp;
-  <a href="#roadmap">Roadmap</a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Vanilla_JS-ES2022-F7DF1E?logo=javascript&logoColor=black" alt="JavaScript" />
-  <img src="https://img.shields.io/badge/OpenAI_API-Streaming-412991?logo=openai&logoColor=white" alt="OpenAI" />
-  <img src="https://img.shields.io/badge/SSE-Streaming-0F766E" alt="SSE" />
-  <img src="https://github.com/keyuchen-del/wechat-digest/actions/workflows/deploy-pages.yml/badge.svg" alt="Deploy" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
-</p>
+![stack](https://img.shields.io/badge/frontend-Vanilla_JS-f7df1e) ![stack](https://img.shields.io/badge/backend-Vercel_Serverless-000) ![store](https://img.shields.io/badge/sync-Upstash_KV-00c389) ![ai](https://img.shields.io/badge/AI-OpenAI%20%7C%20DeepSeek%20%7C%20Qwen-10b981)
 
 ---
 
-## What is WeChat Digest?
+## ✨ 能做什么
 
-WeChat Digest is a lightweight, privacy-first tool for organizing WeChat Official Account (公众号) articles and generating AI-powered summaries. It runs entirely in the browser — no backend, no database, no login required.
+| 能力 | 说明 |
+| --- | --- |
+| **按名称自动抓取** | 输入公众号名称 → 后端代理搜狗微信搜索（带 cookie 预热 / UA 轮换 / 重试 / 缓存）→ 拉取文章列表并解析正文 |
+| **粘贴链接解析** | 直接粘贴 `mp.weixin.qq.com` 文章链接（或搜狗跳转链接），自动解析并清洗为纯净正文 |
+| **AI 结构化分析** | 自动输出「一句话总结 / 核心观点 / 关键数据 / 关键词标签 / 适用人群」，流式输出 |
+| **批量自动化** | 导入后可自动分析，或一键批量分析全部未分析文章 |
+| **多模型切换** | OpenAI、DeepSeek、通义千问任意切换；国产模型经后端代理转发，绕过浏览器 CORS |
+| **工作区码同步** | 每个访客自动获得专属工作区码，文章与分析存云端、按码隔离、互不重叠；换设备输入同码即可恢复 |
+| **Key 仅本地** | API Key 只存浏览器 `localStorage`，**绝不写入云端工作区**，可随时清除 |
 
-> **Demo:** The [live demo](https://keyuchen-del.github.io/wechat-digest/) ships with 5 pre-loaded articles and pre-generated AI summaries. Click "生成总结" to see the typing animation in action — no API key needed.
+---
 
-## Features
+## 👥 多用户：匿名工作区码
 
-| Module | Description |
-|--------|-------------|
-| **Smart Article Management** | Add, organize, and browse articles by account name, publish date, and keyword search |
-| **AI Summary (GPT)** | Streaming summarization via OpenAI Chat Completions API (gpt-4o-mini / gpt-4o / gpt-3.5-turbo) |
-| **Custom Analysis Prompts** | Free-form instructions — "extract key points", "120-word abstract", "compare viewpoints", etc. |
-| **Local Fallback** | Enhanced extractive summarization when no API key is configured — position weighting + keyword boosting |
-| **Typing Animation** | Character-by-character output with cursor, simulating real AI streaming response |
-| **Batch Import** | JSON file import for bulk article loading |
-| **Privacy-First** | All data stored in browser localStorage; API key never leaves the client |
+无需注册登录。首次进入应用会自动生成一串高熵 **工作区码**（形如 `a1b2-c3d4-e5f6-7890`）：
 
-### Demo Experience
+- 工作区码写入浏览器与地址栏 `#ws=...`，可收藏/复制保存；
+- 文章与分析结果按工作区码存于云端 KV，**不同码之间完全隔离、内容不重叠**；
+- 在任意设备的工作台「切换」处输入同一串码，即可同步同一份数据；
+- ⚠️ 工作区码即数据钥匙，**持有者可读写该工作区**，请妥善保存、勿公开分享；
+- 若后端未配置 KV，应用自动降级为「纯本地模式」（仅存当前浏览器），功能照常可用。
 
-```
-Landing Page
-├── Product Info (left)          ← Feature cards + tech badges
-└── Browser Window Frame (right) ← Live interactive demo
-    ├── Tab: 文章库              ← 5 pre-loaded articles with filters
-    ├── Tab: AI 总结             ← Select article → generate summary
-    └── Tab: 设置               ← API key config + data management
-```
+---
 
-## Architecture
+## 🏗 架构
 
 ```
-wechat-digest/
-├── index.html          # Landing showcase + browser window frame + tab UI
-├── styles.css          # Dark theme landing + window chrome + responsive
-├── app.js              # Core logic (single file, ~450 lines)
-│   ├── DEMO_ARTICLES   # 5 pre-loaded Chinese articles (finance/tech/policy)
-│   ├── DEMO_SUMMARY    # Pre-written summaries for all demo articles
-│   ├── initTabs()      # Tab switching controller
-│   ├── renderArticles()        # Article list rendering with filters
-│   ├── summarizeWithGPT()      # OpenAI streaming via fetch + SSE parsing
-│   ├── summarizeWithTyping()   # Typing animation for demo mode
-│   ├── generateLocalSummary()  # Extractive fallback algorithm
-│   └── formatMarkdown()        # Lightweight markdown → HTML
-├── .github/workflows/
-│   └── deploy-pages.yml        # GitHub Pages auto-deploy on push to main
-├── LICENSE             # MIT
-└── README.md
+浏览器（静态前端，零构建）
+  ├─ index.html / styles.css / app.js
+  │   工作区码生成 + 云同步（防抖上传 / 合并下载）+ Key 本地存储
+  └─ 调用 ↓
+Serverless 后端（Vercel Functions, /api）
+  ├─ GET  /api/search?account=名称      搜狗微信搜索 → 文章列表（KV 缓存 10min）
+  ├─ GET  /api/article?url=链接         解析搜狗跳转 → 抓取清洗正文（KV 缓存 1d）
+  ├─ GET/PUT /api/data?ws=工作区码       读取 / 保存某工作区的文章（Upstash KV）
+  └─ POST /api/chat                     OpenAI 兼容流式代理（多 provider）
+        ↓
+Upstash Redis（KV）  按 ws:<码> 存数据；search:* / art:* 做抓取缓存
 ```
 
-### Design Decisions
+> 为什么需要后端：微信公众号无公开官方 API，浏览器直连会被 **CORS** 拦截且有强反爬；
+> DeepSeek / 通义千问的 API 也未对浏览器开放跨域。抓取、AI 调用、跨设备同步都经由 Serverless 完成。
 
-- **Zero dependencies** — No framework, no build step, no node_modules. Pure HTML + CSS + JS
-- **Browser window frame** — macOS-style chrome (red/yellow/green dots + URL bar) gives showcase polish
-- **Tab-based layout** — Compact UI fits inside the demo window without scrolling through long forms
-- **Dual summarization** — Real GPT when API key is set; typing-animated demo summaries when not
-- **Auto-demo on first visit** — Articles load automatically, summary is pre-rendered, zero-click experience
-- **SSE streaming** — GPT responses stream character-by-character via Server-Sent Events, matching ChatGPT UX
+---
 
-## Getting Started
+## 🚀 部署（推荐 Vercel，一处搞定前后端 + 同步）
+
+1. Fork / clone 本仓库
+2. 在 [vercel.com](https://vercel.com) 导入该仓库，框架选 **Other**，无需构建命令
+3. **启用云同步（可选但推荐）**：在 Vercel 项目 → **Storage** → 创建一个 **Upstash for Redis**（或旧版 Vercel KV）并关联到项目。集成会自动注入环境变量：
+   - `KV_REST_API_URL`
+   - `KV_REST_API_TOKEN`
+
+   （应用也兼容 `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`。）
+4. 重新部署。访问分配的域名即可，`/api/*` 自动成为 Serverless 函数。
+
+> 未配置 KV 也能用：`/api/data` 会返回 501，前端自动切到「纯本地模式」（数据仅存当前浏览器，不跨设备）。
+
+本地开发：
 
 ```bash
-# Clone
-git clone https://github.com/keyuchen-del/wechat-digest.git
-cd wechat-digest
-
-# Option 1: Open directly
-open index.html
-
-# Option 2: Local server (recommended)
-python3 -m http.server 4173
-# Visit http://127.0.0.1:4173/
+npm i -g vercel
+vercel dev          # 同时跑前端与 /api 函数；如需同步，先在 Vercel 关联 KV 并 `vercel env pull`
 ```
 
-### Configure OpenAI API (Optional)
+> ⚠️ **GitHub Pages 只能托管静态前端，无法运行 `/api`。**
+> 若用 Pages 托管前端，请把后端单独部署到 Vercel，并在应用「设置 → 后端 API 地址」填入
+> 你的 Vercel 域名（如 `https://your-app.vercel.app`），前端会跨域调用它。
 
-1. Open the **设置** tab in the demo window
-2. Enter your OpenAI API Key (`sk-...`)
-3. Select a model (default: `gpt-4o-mini`)
-4. Click **保存设置**
+---
 
-> The key is stored in `localStorage` only. It is sent directly from your browser to OpenAI's API — no proxy, no backend.
+## 🔑 配置模型
 
-### Batch Import Format
+进入「工作台 → 设置」：
 
-```json
-[
-  {
-    "account": "公众号名称",
-    "publishDate": "2025-03-18",
-    "title": "文章标题",
-    "url": "https://mp.weixin.qq.com/...",
-    "content": "文章正文..."
-  }
-]
-```
+| 模型 | Key 获取 | 备注 |
+| --- | --- | --- |
+| OpenAI | platform.openai.com | 需国外网络 |
+| DeepSeek | platform.deepseek.com | 国内可直连，性价比高 |
+| 通义千问 | 阿里云百炼控制台 | OpenAI 兼容模式 |
 
-`title` and `content` are required; other fields are optional.
+Key 仅保存在浏览器本地，调用时随请求发送给你自己部署的后端代理，再转发给模型厂商。
 
-## Roadmap
+---
 
-- [ ] Multi-article comparison summary (select 2+ articles → cross-analysis)
-- [ ] Claude API support (Anthropic)
-- [ ] RSS feed auto-import (WeChat article RSS bridges)
-- [ ] Export summaries as Markdown / PDF
-- [ ] Article tagging and categorization
-- [ ] Summary history and caching
-- [ ] Dark mode for in-app UI
-- [ ] PWA support (offline access)
-- [ ] Chrome extension for one-click article capture
-- [ ] Collaborative sharing (shareable summary links)
+## 🧭 使用流程
 
-## License
+1. 首页或工作台输入**公众号名称** → 「抓取文章」
+2. 在结果弹窗勾选要导入的文章（可勾选「导入后自动 AI 分析」）
+3. 左侧文章库点击任意文章 → 右侧查看 AI 结构化分析
+4. 可在分析框填写**自定义指令**（如「侧重投资视角」）重新生成
+5. 「一键分析未分析」批量处理整个文章库
 
-[MIT](LICENSE)
+---
+
+## ⚠️ 关于抓取的现实说明
+
+- 后端已做加固：**cookie 预热、UA 轮换、指数退避重试、KV 结果缓存**，可显著提高成功率并降低反爬触发。
+- 但搜狗微信搜索仍存在反爬（高频访问会触发验证码），抓取**不保证 100% 成功**；触发时应用会提示，可改用「粘贴链接」。
+- 搜狗搜索结果是 JS 跳转链接，后端会自动解析出真实 `mp.weixin.qq.com` 地址再抓取。
+- 部分图片/视频类推送无法解析正文，会提示手动粘贴。
+- 本项目仅供个人学习与研究，请遵守目标站点的 robots 与服务条款，控制访问频率。
+
+---
+
+## 📄 License
+
+MIT

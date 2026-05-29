@@ -3,231 +3,343 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WeChat Digest — AI 公众号文章总结工具</title>
-    <meta name="description" content="整理微信公众号推送文章，按公众号/日期筛选，使用 AI（OpenAI GPT）智能总结。" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>" />
+    <title>墨摘 WeChat Digest · AI 公众号抓取与结构化分析</title>
+    <meta
+      name="description"
+      content="输入公众号名称自动抓取最新文章，AI 一键结构化分析。匿名工作区码跨设备同步，支持 OpenAI / DeepSeek / 通义千问。"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23E2452B'/><text x='50' y='72' font-size='62' text-anchor='middle' fill='%23F7F3EC' font-family='serif'>摘</text></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@500;700;900&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="landing-layout">
-      <!-- Left: Product Info -->
-      <div class="landing-info">
-        <div class="landing-logo">
-          <div class="landing-logo-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
-              <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>
-            </svg>
-          </div>
-          <span class="landing-logo-text">WeChat Digest</span>
-        </div>
+    <div class="grain" aria-hidden="true"></div>
 
-        <div class="landing-tagline">
-          AI-Powered WeChat Article Summarizer<br/>
-          公众号文章整理与 AI 智能总结工具
-        </div>
+    <!-- ───── Nav ───── -->
+    <nav class="nav" id="top">
+      <a class="brand" href="#top">
+        <span class="seal">摘</span>
+        <span class="brand-text">墨摘 <em>Digest</em></span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">能力</a>
+        <a href="#how">流程</a>
+        <a href="#workspace">工作台</a>
+        <a class="nav-ghost" href="https://github.com/keyuchen-del/wechat-digest" target="_blank" rel="noopener">GitHub ↗</a>
+        <a class="nav-cta" href="#workspace">进入工作台</a>
+      </div>
+    </nav>
 
-        <div class="landing-features">
-          <div class="landing-feature">
-            <div class="landing-feature-icon" style="background:rgba(16,185,129,0.15)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            </div>
-            <div>
-              <div class="landing-feature-title">智能文章管理</div>
-              <div class="landing-feature-desc">按公众号、日期整理推送文章，关键词快速筛选检索</div>
-            </div>
-          </div>
-          <div class="landing-feature">
-            <div class="landing-feature-icon" style="background:rgba(14,165,233,0.15)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 2 6H14c0-3 2-4 2-6a4 4 0 0 0-4-4z"/><path d="M10 17v1a2 2 0 1 0 4 0v-1"/><line x1="10" y1="13" x2="14" y2="13"/></svg>
-            </div>
-            <div>
-              <div class="landing-feature-title">AI 智能总结</div>
-              <div class="landing-feature-desc">接入 OpenAI GPT，流式分析文章，支持自定义分析指令</div>
-            </div>
-          </div>
-          <div class="landing-feature">
-            <div class="landing-feature-icon" style="background:rgba(168,85,247,0.15)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </div>
-            <div>
-              <div class="landing-feature-title">批量导入</div>
-              <div class="landing-feature-desc">JSON 格式一键导入文章库，内置示例数据即刻体验</div>
-            </div>
-          </div>
-          <div class="landing-feature">
-            <div class="landing-feature-icon" style="background:rgba(239,68,68,0.15)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <div>
-              <div class="landing-feature-title">隐私优先</div>
-              <div class="landing-feature-desc">所有数据存储在浏览器本地，API Key 不上传任何服务器</div>
-            </div>
+    <!-- ───── Hero ───── -->
+    <header class="hero">
+      <div class="hero-rule">No.01 — AI READING WORKBENCH / 公众号情报工作台</div>
+      <div class="hero-grid">
+        <div class="hero-main">
+          <h1 class="hero-title">
+            把一整本<span class="ink-accent">公众号</span><br />
+            读成一页<span class="serif-it">洞察</span>。
+          </h1>
+          <p class="hero-sub">
+            输入公众号名称，自动抓取最新推送；AI 当场提炼一句话总结、核心观点、关键数据与标签。
+            匿名工作区码即开即用，跨设备同步，无需注册。
+          </p>
+
+          <form class="hero-search" id="hero-form">
+            <input id="hero-account" placeholder="输入公众号名称，如：晚点LatePost" autocomplete="off" />
+            <button type="submit" class="btn-solid">开始抓取 →</button>
+          </form>
+          <p class="hero-hint">抓取经 Serverless 后端代理 · 也支持粘贴文章链接 · API Key 仅存本地</p>
+
+          <div class="hero-stats">
+            <div><strong id="stat-articles">0</strong><span>工作区文章</span></div>
+            <div class="vr"></div>
+            <div><strong id="stat-analyzed">0</strong><span>已分析</span></div>
+            <div class="vr"></div>
+            <div><strong>3</strong><span>可选模型</span></div>
           </div>
         </div>
 
-        <div class="landing-badges">
-          <span class="landing-badge">Vanilla JS</span>
-          <span class="landing-badge">OpenAI API</span>
-          <span class="landing-badge">SSE Streaming</span>
-          <span class="landing-badge">localStorage</span>
-          <span class="landing-badge">GitHub Pages</span>
+        <aside class="hero-card">
+          <div class="hc-stamp">摘</div>
+          <div class="hc-label">结构化分析样张</div>
+          <div class="hc-line"><b>一句话总结</b>价格战的核心是推理成本一年降约 70%，而非单纯补贴。</div>
+          <div class="hc-line"><b>核心观点</b>头部用低价抢生态，盈利靠定制部署 / 垂直方案 / SaaS。</div>
+          <div class="hc-line"><b>关键数据</b>API 价格下调 50%–90%；年底 30%–40% 创业公司出局。</div>
+          <div class="hc-tags"><span>大模型</span><span>商业模式</span><span>行业洗牌</span></div>
+        </aside>
+      </div>
+    </header>
+
+    <!-- ───── Features ───── -->
+    <section class="features" id="features">
+      <div class="sec-head">
+        <span class="sec-no">No.02</span>
+        <h2>为高效阅读而生</h2>
+        <p>从抓取到洞察，全流程自动化</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feat">
+          <span class="feat-no">01</span>
+          <h3>按名称自动抓取</h3>
+          <p>输入公众号名称，后端代理搜狗微信搜索，带重试与缓存拉取最新文章列表并解析正文，告别手动复制。</p>
+        </article>
+        <article class="feat">
+          <span class="feat-no">02</span>
+          <h3>AI 结构化分析</h3>
+          <p>不只是摘要。自动输出一句话总结、核心观点、关键数据、关键词标签与适用人群，流式生成秒懂全文。</p>
+        </article>
+        <article class="feat">
+          <span class="feat-no">03</span>
+          <h3>工作区码同步</h3>
+          <p>首次进入自动生成专属工作区码，文章与分析存于云端。在任意设备输入同一串码，即可继续你的阅读。</p>
+        </article>
+        <article class="feat">
+          <span class="feat-no">04</span>
+          <h3>多模型 · Key 本地</h3>
+          <p>OpenAI / DeepSeek / 通义千问自由切换，国产模型国内直连。API Key 只存浏览器，绝不上云。</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ───── How ───── -->
+    <section class="steps" id="how">
+      <div class="sec-head">
+        <span class="sec-no">No.03</span>
+        <h2>三步，从公众号到洞察</h2>
+      </div>
+      <div class="step-grid">
+        <div class="step">
+          <div class="step-no">壹</div>
+          <h3>输入名称</h3>
+          <p>填写目标公众号，后端自动检索其最新文章列表。</p>
+        </div>
+        <div class="step">
+          <div class="step-no">贰</div>
+          <h3>抓取正文</h3>
+          <p>勾选要导入的文章，自动解析并清洗为纯净正文。</p>
+        </div>
+        <div class="step">
+          <div class="step-no">叁</div>
+          <h3>AI 分析</h3>
+          <p>一键生成结构化分析，沉淀为你的私人知识库。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───── Workspace ───── -->
+    <main class="workspace" id="workspace">
+      <div class="ws-head">
+        <div class="ws-head-l">
+          <span class="sec-no">No.04</span>
+          <h2>工作台</h2>
+        </div>
+        <div class="ws-head-r">
+          <div class="ws-code" id="ws-code-box" title="你的专属工作区码，换设备时输入它即可同步">
+            <span class="ws-code-k">工作区</span>
+            <span class="ws-code-v" id="ws-code-label">····</span>
+            <button type="button" class="ico-btn" id="copy-code-btn" title="复制工作区码">复制</button>
+            <button type="button" class="ico-btn" id="switch-ws-btn" title="切换 / 输入工作区码">切换</button>
+          </div>
+          <span class="sync-pill" id="sync-status"><i class="dot"></i><span id="sync-text">本地</span></span>
+          <button type="button" class="chip" id="provider-chip">未配置模型</button>
+          <button type="button" class="btn-line sm" id="open-settings">设置</button>
         </div>
       </div>
 
-      <!-- Right: Browser Window Frame -->
-      <div class="demo-window">
-        <div class="window-titlebar">
-          <div class="window-dots">
-            <span class="dot-red"></span>
-            <span class="dot-yellow"></span>
-            <span class="dot-green"></span>
-          </div>
-          <div class="window-url">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            keyuchen-del.github.io/wechat-digest
+      <!-- Crawl bar -->
+      <div class="crawl">
+        <div class="crawl-field">
+          <label>① 按公众号名称抓取</label>
+          <div class="crawl-input">
+            <input id="account-input" placeholder="如：晚点LatePost、虎嗅APP" autocomplete="off" />
+            <button type="button" class="btn-solid sm" id="crawl-btn">抓取</button>
           </div>
         </div>
-
-        <div class="window-content">
-          <!-- Mini Header -->
-          <div class="app-header">
-            <h1>公众号推送整理与总结助手</h1>
+        <div class="crawl-sep">或</div>
+        <div class="crawl-field">
+          <label>② 粘贴文章链接</label>
+          <div class="crawl-input">
+            <input id="link-input" placeholder="mp.weixin.qq.com 文章链接" autocomplete="off" />
+            <button type="button" class="btn-line sm" id="parse-link-btn">解析</button>
           </div>
+        </div>
+      </div>
 
-          <!-- Tab Bar -->
-          <div class="tab-bar">
-            <div class="tab active" data-tab="library">文章库</div>
-            <div class="tab" data-tab="summary">AI 总结</div>
-            <div class="tab" data-tab="settings">设置</div>
+      <!-- Two-pane -->
+      <div class="ws-body">
+        <aside class="ws-list">
+          <div class="list-tools">
+            <input id="keyword" placeholder="搜索标题 / 正文" />
+            <input id="filter-account" placeholder="公众号" />
           </div>
-
-          <!-- Tab: Library -->
-          <div class="tab-panel active" id="panel-library">
-            <div class="toolbar">
-              <input id="keyword" placeholder="关键词搜索" />
-              <input id="filter-date" type="date" />
-              <input id="filter-account" placeholder="公众号" />
-              <button id="clear-filters" type="button" class="btn-sm">清空</button>
-            </div>
-            <div class="list-header">
-              <span>共 <strong id="article-count">0</strong> 篇文章</span>
-              <button type="button" class="btn-sm" id="add-article-btn">+ 添加文章</button>
-            </div>
-            <ul id="article-list" class="article-list"></ul>
-
-            <!-- Add Article Modal (hidden) -->
-            <div class="modal-overlay" id="add-modal" style="display:none">
-              <div class="modal">
-                <div class="modal-header">
-                  <h3>添加文章</h3>
-                  <button type="button" class="modal-close" id="close-modal">&times;</button>
-                </div>
-                <form id="article-form">
-                  <div class="form-grid">
-                    <label>
-                      公众号名称
-                      <input id="account" required placeholder="例如：XX财经观察" />
-                    </label>
-                    <label>
-                      推送日期
-                      <input id="publish-date" type="date" required />
-                    </label>
-                    <label class="span-2">
-                      文章标题
-                      <input id="title" required placeholder="输入文章标题" />
-                    </label>
-                    <label class="span-2">
-                      原文链接（可选）
-                      <input id="url" type="url" placeholder="https://..." />
-                    </label>
-                    <label class="span-2">
-                      文章内容
-                      <textarea id="content" rows="5" required placeholder="粘贴文章全文，便于后续总结"></textarea>
-                    </label>
-                  </div>
-                  <div class="modal-actions">
-                    <button type="submit" class="btn-primary">保存文章</button>
-                    <button type="button" class="btn-sm" id="cancel-modal">取消</button>
-                  </div>
-                </form>
-              </div>
-            </div>
+          <div class="list-tools">
+            <input id="filter-date" type="date" />
+            <button type="button" class="btn-line tiny" id="clear-filters">清空筛选</button>
           </div>
-
-          <!-- Tab: AI Summary -->
-          <div class="tab-panel" id="panel-summary">
-            <div class="summary-layout">
-              <div class="summary-select">
-                <label class="select-label">选择文章</label>
-                <select id="article-select" class="article-select">
-                  <option value="">-- 请选择一篇文章 --</option>
-                </select>
-              </div>
-              <label>
-                分析指令
-                <textarea id="prompt" rows="2" placeholder="例如：提炼核心观点并输出 120 字摘要"></textarea>
-              </label>
-              <button id="summarize-btn" type="button" class="btn-primary btn-full">生成总结</button>
-              <div id="summary-output" class="summary-output"></div>
-            </div>
+          <div class="list-meta">
+            <span>共 <strong id="article-count">0</strong> · <strong id="analyzed-count">0</strong> 已分析</span>
+            <button type="button" class="btn-line tiny" id="add-article-btn">+ 手动</button>
           </div>
+          <button type="button" class="btn-solid tiny block" id="analyze-all-btn">⚡ 一键分析未分析</button>
+          <ul id="article-list" class="article-list"></ul>
+        </aside>
 
-          <!-- Tab: Settings -->
-          <div class="tab-panel" id="panel-settings">
-            <div class="settings-section">
-              <h3>API 配置</h3>
-              <p class="tip">填入 OpenAI API Key 后可使用 GPT 进行真正的智能总结。Key 仅存储在浏览器本地。</p>
-              <div class="settings-form">
-                <label>
-                  OpenAI API Key
-                  <input id="api-key" type="password" placeholder="sk-..." />
-                </label>
-                <label>
-                  模型
-                  <select id="api-model">
-                    <option value="gpt-4o-mini">gpt-4o-mini（推荐）</option>
-                    <option value="gpt-4o">gpt-4o（更强）</option>
-                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                  </select>
-                </label>
-                <div class="settings-actions">
-                  <button type="button" id="save-api" class="btn-primary">保存设置</button>
-                  <button type="button" id="clear-api" class="btn-sm">清除 Key</button>
-                  <span class="api-status" id="api-status">未配置</span>
-                </div>
-              </div>
-            </div>
-            <hr class="divider"/>
-            <div class="settings-section">
-              <h3>数据管理</h3>
-              <div class="settings-actions">
-                <button type="button" id="load-demo" class="btn-sm">加载示例数据</button>
-                <button type="button" id="import-btn" class="btn-sm">批量导入 JSON</button>
-              </div>
-              <input type="file" id="import-file" accept=".json" style="display:none" />
-            </div>
+        <section class="ws-detail" id="detail">
+          <div class="detail-empty" id="detail-empty">
+            <div class="empty-seal">摘</div>
+            <p>从左侧选择一篇文章，或在上方抓取新文章开始分析。</p>
+            <button type="button" class="btn-line" id="load-demo-empty">加载示例数据</button>
+          </div>
+          <div class="detail-content" id="detail-content" style="display:none"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="foot-seal">摘</div>
+      <p>墨摘 WeChat Digest · 开源于 <a href="https://github.com/keyuchen-del/wechat-digest" target="_blank" rel="noopener">GitHub</a></p>
+      <p class="foot-fine">抓取仅用于个人学习研究，请遵守目标站点规则 · 数据按工作区码隔离</p>
+    </footer>
+
+    <!-- ───── Crawl Results Modal ───── -->
+    <div class="modal-overlay" id="results-modal" style="display:none">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3>抓取结果 · <span id="results-account"></span></h3>
+          <button type="button" class="modal-close" data-close>&times;</button>
+        </div>
+        <div class="results-toolbar">
+          <label class="chk"><input type="checkbox" id="results-select-all" /> 全选</label>
+          <label class="chk"><input type="checkbox" id="results-auto-analyze" checked /> 导入后自动 AI 分析</label>
+        </div>
+        <ul id="results-list" class="results-list"></ul>
+        <div class="modal-actions">
+          <button type="button" class="btn-solid" id="import-selected-btn">导入选中</button>
+          <button type="button" class="btn-line" data-close>取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── Switch Workspace Modal ───── -->
+    <div class="modal-overlay" id="switch-modal" style="display:none">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>工作区码</h3>
+          <button type="button" class="modal-close" data-close>&times;</button>
+        </div>
+        <div class="settings-body">
+          <p class="set-tip">
+            工作区码是你数据的钥匙。<b>妥善保存</b>：持有它的人即可读取你的文章与分析。换设备时在此输入即可同步。
+          </p>
+          <div class="set-group">
+            <label class="set-label">当前工作区码</label>
+            <div class="code-show"><code id="switch-current"></code><button type="button" class="btn-line tiny" id="copy-code-btn2">复制</button></div>
+          </div>
+          <div class="set-group">
+            <label class="set-label" for="switch-code-input">切换到已有工作区</label>
+            <input id="switch-code-input" placeholder="粘贴一串工作区码，如 a1b2-c3d4-e5f6" autocomplete="off" />
+          </div>
+          <div class="set-actions">
+            <button type="button" class="btn-solid" id="switch-confirm-btn">载入该工作区</button>
+            <button type="button" class="btn-line" id="new-ws-btn">新建空白工作区</button>
           </div>
         </div>
       </div>
     </div>
 
-    <template id="article-item-template">
-      <li class="article-item">
-        <div class="article-item-header">
-          <label class="radio-label">
-            <input type="checkbox" name="selected-article" />
-            <span class="meta"></span>
-          </label>
-          <div class="article-actions">
-            <a class="url" target="_blank" rel="noopener noreferrer">原文</a>
-            <button type="button" class="delete-btn">删除</button>
+    <!-- ───── Settings Modal ───── -->
+    <div class="modal-overlay" id="settings-modal" style="display:none">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>设置</h3>
+          <button type="button" class="modal-close" data-close>&times;</button>
+        </div>
+        <div class="settings-body">
+          <div class="set-group">
+            <label class="set-label">AI 模型提供方</label>
+            <div class="provider-tabs" id="provider-tabs">
+              <button type="button" data-provider="openai" class="active">OpenAI</button>
+              <button type="button" data-provider="deepseek">DeepSeek</button>
+              <button type="button" data-provider="dashscope">通义千问</button>
+            </div>
+          </div>
+          <div class="set-group">
+            <label class="set-label" for="model-select">模型</label>
+            <select id="model-select"></select>
+          </div>
+          <div class="set-group">
+            <label class="set-label" for="api-key">API Key <span class="set-note" id="key-note"></span></label>
+            <input id="api-key" type="password" placeholder="sk-..." autocomplete="off" />
+            <p class="set-tip">Key 仅保存在本机浏览器，不会上传云端工作区。换设备需重新填写。</p>
+          </div>
+          <div class="set-group">
+            <label class="set-label" for="api-base">后端 API 地址（可选）</label>
+            <input id="api-base" placeholder="留空＝同源 /api（部署在 Vercel 时）" autocomplete="off" />
+            <p class="set-tip">前端在 GitHub Pages、后端在 Vercel 时，填后端域名，如 https://xxx.vercel.app</p>
+          </div>
+          <div class="set-actions">
+            <button type="button" class="btn-solid" id="save-settings">保存设置</button>
+            <button type="button" class="btn-line" id="load-demo-btn">加载示例</button>
+            <button type="button" class="btn-line" id="import-json-btn">导入 JSON</button>
+            <button type="button" class="btn-danger" id="clear-all-btn">清空本工作区</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" />
           </div>
         </div>
-        <h4 class="title"></h4>
-        <p class="preview"></p>
-        <button type="button" class="expand-btn">展开全文</button>
-        <div class="full-content" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- ───── Add Article Modal ───── -->
+    <div class="modal-overlay" id="add-modal" style="display:none">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>手动添加文章</h3>
+          <button type="button" class="modal-close" data-close>&times;</button>
+        </div>
+        <form id="article-form" class="form-grid">
+          <label>公众号名称<input id="f-account" required placeholder="如：XX财经观察" /></label>
+          <label>推送日期<input id="f-date" type="date" required /></label>
+          <label class="span-2">文章标题<input id="f-title" required placeholder="文章标题" /></label>
+          <label class="span-2">原文链接（可选）<input id="f-url" type="url" placeholder="https://..." /></label>
+          <label class="span-2">文章正文<textarea id="f-content" rows="6" required placeholder="粘贴文章全文"></textarea></label>
+          <div class="modal-actions span-2">
+            <button type="submit" class="btn-solid">保存</button>
+            <button type="button" class="btn-line" data-close>取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <template id="tpl-article-item">
+      <li class="article-item">
+        <div class="ai-top">
+          <span class="ai-meta"></span>
+          <span class="ai-badge"></span>
+        </div>
+        <h4 class="ai-title"></h4>
+        <p class="ai-preview"></p>
+      </li>
+    </template>
+
+    <template id="tpl-result-item">
+      <li class="result-item">
+        <label>
+          <input type="checkbox" class="result-check" />
+          <div class="result-body">
+            <div class="result-meta"></div>
+            <div class="result-title"></div>
+            <div class="result-summary"></div>
+          </div>
+        </label>
       </li>
     </template>
 
