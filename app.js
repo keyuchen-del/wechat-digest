@@ -45,8 +45,20 @@ const toastEl = $("toast");
 bindEvents();
 applySettingsToUI();
 renderWsCode();
+maybeSeedDemo();
 renderAll();
 initSync();
+
+// 纯静态 demo 模式（未配置后端）：首次访问自动载入示例，让站点开箱即有内容。
+// 配置了真实后端后不再自动播种，交给云同步。
+function maybeSeedDemo() {
+  if (backendConfigured()) return;
+  if (localStorage.getItem("wcd_seeded")) return;
+  if (articles.length) return;
+  articles = demoArticles();
+  saveArticlesLocal();
+  localStorage.setItem("wcd_seeded", "1");
+}
 
 /* ════════════════ Workspace code ════════════════ */
 
